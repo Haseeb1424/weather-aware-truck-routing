@@ -223,9 +223,10 @@ export function MapView(props: Props) {
           id="checkpoints"
           type="circle"
           paint={{
-            'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 3.5, 9, 7],
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 4, 9, 7.5],
             'circle-color': ['match', ['get', 'level'], 0, RISK_COLORS[0], 1, RISK_COLORS[1], 2, RISK_COLORS[2], 3, RISK_COLORS[3], RISK_COLORS[4]],
-            'circle-stroke-color': '#08121c',
+            // Light ring so the dots stand out from the same-coloured route line.
+            'circle-stroke-color': '#f1f5f9',
             'circle-stroke-width': ['case', ['==', ['get', 'index'], focus?.index ?? -1], 3, 1.5],
           }}
         />

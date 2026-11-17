@@ -10,9 +10,11 @@ interface Props {
 
 export function CheckpointList({ checkpoints, activeIndex, onSelect }: Props) {
   return (
-    <div className="overflow-hidden rounded-xl border border-line">
+    // overflow-clip (not hidden) keeps the rounded corners without creating a scroll
+    // container, so the header can stick to the side panel while it scrolls.
+    <div className="overflow-clip rounded-xl border border-line">
       <table className="w-full text-xs tabular-nums">
-        <thead className="bg-ink-850 text-left text-[10px] tracking-wider text-slate-500 uppercase">
+        <thead className="sticky top-0 z-[1] bg-ink-850 text-left text-[10px] tracking-wider text-slate-500 uppercase shadow-[0_1px_0_rgb(148_163_184/0.16)]">
           <tr>
             <th className="py-2 pl-3 font-medium">Mile</th>
             <th className="py-2 font-medium">ETA</th>

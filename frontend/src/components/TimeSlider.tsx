@@ -75,7 +75,7 @@ export function TimeSlider(props: Props) {
           )}
         </button>
         <div className="min-w-[150px]">
-          <div className="text-[10px] font-semibold tracking-[0.14em] text-slate-500 uppercase">Forecast time</div>
+          <div className="hidden text-[10px] font-semibold tracking-[0.14em] text-slate-500 uppercase sm:block">Forecast time</div>
           <div className="text-sm font-semibold text-white tabular-nums">
             {formatTime(at)}{' '}
             <span className="font-normal text-slate-400">· +{hour.toFixed(hour % 1 ? 1 : 0)} h</span>

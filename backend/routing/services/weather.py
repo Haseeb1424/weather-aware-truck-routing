@@ -18,6 +18,8 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 
+from .risk import normalize, round_half_up
+
 log = logging.getLogger(__name__)
 
 GRID_DEG = 0.05  # ≈5 km — finer than the forecast models' resolution, so nothing is lost
@@ -39,11 +41,14 @@ class Conditions:
     snow_in_hr: float
 
     def as_dict(self) -> dict:
+        """Values at the precision they are classified at (see risk.normalize),
+        so what the UI shows is exactly what was rated."""
+        wind, rain, snow = normalize(self.wind_mph, self.rain_in_hr, self.snow_in_hr)
         return {
-            "wind_mph": round(self.wind_mph, 1),
-            "gust_mph": round(self.gust_mph, 1),
-            "rain_in_hr": round(self.rain_in_hr, 3),
-            "snow_in_hr": round(self.snow_in_hr, 3),
+            "wind_mph": wind,
+            "gust_mph": round_half_up(max(0.0, self.gust_mph)),
+            "rain_in_hr": rain,
+            "snow_in_hr": snow,
         }
 
 

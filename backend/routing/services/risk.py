@@ -11,11 +11,19 @@ safety. The one exception is where the spec writes the top band with a strict ">
 (rain ">1.00", snow ">3.0"): there the boundary value stays in Severe.
 Wind bands are written in whole mph ("25–34", "35–44"), so they become the
 half-open ranges [25, 35), [35, 45), [45, 55) and >= 55.
+
+Precision
+---------
+The table is written in whole mph and hundredths of an inch per hour, so
+forecasts are rounded to that precision (half up) *before* classification —
+see :func:`normalize`. The value shown to the user is exactly the value rated:
+34.6 mph is shown and rated as 35 mph (High), never "35 mph → Moderate".
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import ROUND_HALF_UP, Decimal
 from enum import IntEnum
 
 
@@ -53,6 +61,22 @@ HEAVY_LOAD_SEVERE_WIND_MPH = 45.0  # 45–54 mph band
 HEAVY_LOAD_NO_TRAVEL_LB = 30_000
 STRONG_WIND_MPH = 35.0  # 35–44 mph band
 VERY_HEAVY_LOAD_SEVERE_LB = 40_000
+
+
+def round_half_up(value: float, places: int = 0) -> float:
+    """Round like a person would (2.5 → 3), not banker's rounding (2.5 → 2)."""
+    q = Decimal(1).scaleb(-places)
+    return float(Decimal(str(value)).quantize(q, rounding=ROUND_HALF_UP))
+
+
+def normalize(wind_mph: float | None, rain_in_hr: float | None, snow_in_hr: float | None) -> tuple[float, float, float]:
+    """Clamp to >= 0 and round to the precision of the risk table:
+    whole mph for wind, 0.01 in/hr for rain and snow."""
+    return (
+        round_half_up(max(0.0, wind_mph or 0.0)),
+        round_half_up(max(0.0, rain_in_hr or 0.0), 2),
+        round_half_up(max(0.0, snow_in_hr or 0.0), 2),
+    )
 
 
 def classify_wind(wind_mph: float) -> Risk:
@@ -115,9 +139,7 @@ class Assessment:
 def assess(wind_mph: float, rain_in_hr: float, snow_in_hr: float, load_lb: float) -> Assessment:
     """Classify one checkpoint. The overall level is the worst of wind (after load
     rules), rain and snow."""
-    wind_mph = max(0.0, wind_mph or 0.0)
-    rain_in_hr = max(0.0, rain_in_hr or 0.0)
-    snow_in_hr = max(0.0, snow_in_hr or 0.0)
+    wind_mph, rain_in_hr, snow_in_hr = normalize(wind_mph, rain_in_hr, snow_in_hr)
 
     table_wind = classify_wind(wind_mph)
     wind_level, load_reason = apply_load_rules(wind_mph, load_lb, table_wind)
@@ -144,7 +166,8 @@ def assess(wind_mph: float, rain_in_hr: float, snow_in_hr: float, load_lb: float
 
 
 def risk_level(wind_mph: float, rain_in_hr: float, snow_in_hr: float, load_lb: float) -> int:
-    """Fast path for the heatmap, which needs thousands of classifications."""
+    """Overall level only — used by the heatmap, which needs thousands of these."""
+    wind_mph, rain_in_hr, snow_in_hr = normalize(wind_mph, rain_in_hr, snow_in_hr)
     wind = classify_wind(wind_mph)
     wind, _ = apply_load_rules(wind_mph, load_lb, wind)
     return int(max(wind, classify_rain(rain_in_hr), classify_snow(snow_in_hr)))

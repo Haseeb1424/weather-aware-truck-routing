@@ -112,6 +112,7 @@ no route is safe at that departure time.
 | Topic | Decision |
 |---|---|
 | Overlapping bands (e.g. rain 0.25 sits in two bands) | A boundary value goes to the **higher** band (safer). The exception is where the spec writes the top band with ">" (rain > 1.00, snow > 3.0), so exactly 1.00 in/hr is Severe. Wind bands are whole mph: [25,35), [35,45), [45,55), ≥ 55. |
+| Precision | Forecasts are rounded to the table's precision (whole mph; 0.01 in/hr), half up, **before** classifying, so the number shown is exactly the number rated (34.6 mph is shown and rated as 35 mph → High). |
 | No Travel in the ranking | Ranked before Severe miles. The spec's list doesn't mention it, but a forbidden route must never beat a merely Severe one. |
 | "Average risk" | Weighted by miles, Low=0 … No Travel=4, rounded to 0.01 so tiny differences don't decide the ranking. |
 | Wind | Sustained wind is classified (the table uses sustained-wind thresholds). Gusts are shown but not rated. |
@@ -139,7 +140,7 @@ backend/
       geocoding.py           Photon place search
     serializers.py           request validation
     views.py, urls.py        /api/plan, /api/heatmap, /api/geocode, /api/health
-    tests/                   75 tests: rules, ranking, geometry, weather, routing, API (HTTP mocked)
+    tests/                   83 tests: rules, ranking, geometry, weather, routing, API (HTTP mocked)
 frontend/src/
   App.tsx                    state + layout
   components/MapView.tsx     MapLibre map: risk-coloured route, checkpoints, heatmap, trucks

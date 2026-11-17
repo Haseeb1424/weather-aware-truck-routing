@@ -25,34 +25,48 @@ const EXAMPLES: { name: string; origin: Place; destination: Place }[] = [
 interface Props {
   loading: boolean
   onSubmit: (req: PlanRequest) => void
+  /** Error from the last server request; cleared as soon as the user edits anything. */
+  serverError: string | null
+  onClearServerError: () => void
 }
 
-export function TripForm({ loading, onSubmit }: Props) {
+export function TripForm({ loading, onSubmit, serverError, onClearServerError }: Props) {
   const [origin, setOrigin] = useState<Place | null>(null)
   const [destination, setDestination] = useState<Place | null>(null)
   const [departure, setDeparture] = useState(() => toLocalInput(defaultDeparture()))
   const [load, setLoad] = useState('35000')
   const [interval, setInterval] = useState<10 | 25 | 50>(25)
-  const [error, setError] = useState<string | null>(null)
+  const [localError, setLocalError] = useState<string | null>(null)
+  const error = localError ?? serverError
+
+  // Any edit makes an old error stale, whether it came from this form or the server.
+  const edited =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v)
+      setLocalError(null)
+      onClearServerError()
+    }
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
+    onClearServerError()
     const loadLb = Number(load)
-    if (!origin || !destination) return setError('Pick an origin and a destination from the suggestions.')
-    if (!Number.isFinite(loadLb) || loadLb < 0 || loadLb > 80000) return setError('Load must be 0–80,000 lb.')
+    if (!origin || !destination) return setLocalError('Pick an origin and a destination from the suggestions.')
+    if (!Number.isFinite(loadLb) || loadLb < 0 || loadLb > 80000) return setLocalError('Load must be 0–80,000 lb.')
     const dep = new Date(departure)
-    if (Number.isNaN(dep.getTime())) return setError('Enter a valid departure time.')
-    setError(null)
+    if (Number.isNaN(dep.getTime())) return setLocalError('Enter a valid departure time.')
+    setLocalError(null)
     onSubmit({ origin, destination, departure: dep.toISOString(), load_lb: loadLb, interval_mi: interval })
   }
 
   return (
     <form onSubmit={submit} className="space-y-3.5">
-      <PlaceInput label="Origin" value={origin} onChange={setOrigin} placeholder="City or address" marker="origin" />
+      <PlaceInput label="Origin" value={origin} onChange={edited(setOrigin)} placeholder="City or address" marker="origin" />
       <PlaceInput
         label="Destination"
         value={destination}
-        onChange={setDestination}
+        onChange={edited(setDestination)}
         placeholder="City or address"
         marker="destination"
       />
@@ -65,7 +79,7 @@ export function TripForm({ loading, onSubmit }: Props) {
             id="departure"
             type="datetime-local"
             value={departure}
-            onChange={(e) => setDeparture(e.target.value)}
+            onChange={(e) => edited(setDeparture)(e.target.value)}
             className={`${inputCls} px-2.5 [color-scheme:dark]`}
           />
         </div>
@@ -81,7 +95,7 @@ export function TripForm({ loading, onSubmit }: Props) {
             max={80000}
             step={500}
             value={load}
-            onChange={(e) => setLoad(e.target.value)}
+            onChange={(e) => edited(setLoad)(e.target.value)}
             className={`${inputCls} tabular-nums`}
           />
         </div>
@@ -90,13 +104,17 @@ export function TripForm({ loading, onSubmit }: Props) {
         <legend className={labelCls}>Weather checkpoint every</legend>
         <div className={`${segmentedCls} grid-cols-3`}>
           {([10, 25, 50] as const).map((v) => (
-            <button key={v} type="button" aria-pressed={interval === v} onClick={() => setInterval(v)} className={segmentCls(interval === v)}>
+            <button key={v} type="button" aria-pressed={interval === v} onClick={() => edited(setInterval)(v)} className={segmentCls(interval === v)}>
               {v} mi
             </button>
           ))}
         </div>
       </fieldset>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          {error}
+        </div>
+      )}
       <button
         type="submit"
         disabled={loading}
@@ -113,7 +131,7 @@ export function TripForm({ loading, onSubmit }: Props) {
             type="button"
             className="rounded-full border border-line-strong px-2.5 py-0.5 text-slate-300 transition hover:border-accent hover:text-accent"
             onClick={() => {
-              setOrigin(ex.origin)
+              edited(setOrigin)(ex.origin)
               setDestination(ex.destination)
             }}
           >

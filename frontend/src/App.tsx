@@ -85,6 +85,8 @@ export default function App() {
     }
   }
 
+  const clearError = useCallback(() => setError(null), [])
+
   const selectRoute = useCallback((id: string) => {
     setSelectedId(id)
     setFocus(null)
@@ -102,18 +104,14 @@ export default function App() {
   const ordered = plan && rec ? rec.ranking.map((id) => plan.routes.find((r) => r.id === id)!) : []
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <Header />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <aside className="scroll-thin flex max-h-[55vh] w-full shrink-0 flex-col overflow-y-auto border-b border-line bg-ink-900 md:max-h-none md:w-[400px] md:border-r md:border-b-0">
+        {/* Phone: panel takes the top 45% and scrolls on its own; the page itself never scrolls. */}
+        <aside className="scroll-thin flex h-[45%] w-full shrink-0 flex-col overflow-y-auto overscroll-contain border-b border-line bg-ink-900 md:h-auto md:w-[400px] md:border-r md:border-b-0">
           <section className="px-4 pt-4 pb-5">
             <h2 className={`${sectionTitleCls} mb-3`}>Trip</h2>
-            <TripForm loading={loading} onSubmit={submit} />
-            {error && (
-              <div role="alert" className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-                {error}
-              </div>
-            )}
+            <TripForm loading={loading} onSubmit={submit} serverError={error} onClearServerError={clearError} />
           </section>
 
           {plan && rec && (
@@ -167,7 +165,7 @@ export default function App() {
           )}
         </aside>
 
-        <main className="relative min-h-[45vh] flex-1">
+        <main className="relative min-h-0 flex-1">
           <MapView
             plan={plan}
             selectedId={selectedId}

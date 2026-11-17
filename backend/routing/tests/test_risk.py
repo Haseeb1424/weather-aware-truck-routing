@@ -63,13 +63,13 @@ def test_snow_bands(rate, expected):
         # 45–54 mph: No Travel only above 30,000 lb
         (45, 30_000, Risk.SEVERE),
         (45, 30_001, Risk.NO_TRAVEL),
-        (54.9, 80_000, Risk.NO_TRAVEL),
+        (54.4, 80_000, Risk.NO_TRAVEL),
         # 35–44 mph: Severe only above 40,000 lb
         (35, 40_000, Risk.HIGH),
         (35, 40_001, Risk.SEVERE),
-        (44.9, 45_000, Risk.SEVERE),
+        (44.4, 45_000, Risk.SEVERE),
         # below 35 mph load does not matter
-        (34.9, 80_000, Risk.MODERATE),
+        (34.4, 80_000, Risk.MODERATE),
     ],
 )
 def test_load_rules(wind, load, expected):
@@ -93,3 +93,33 @@ def test_load_reason_is_explained():
 def test_missing_or_negative_values_are_low():
     assert assess(None, None, None, 20_000).level == Risk.LOW
     assert assess(-3, -0.1, -1, 20_000).level == Risk.LOW
+
+
+@pytest.mark.parametrize(
+    "wind, rain, snow, expected",
+    [
+        (34.5, 0, 0, Risk.HIGH),  # rounds half up to 35 mph
+        (34.49, 0, 0, Risk.MODERATE),
+        (0, 0.095, 0, Risk.MODERATE),  # → 0.10 in/hr
+        (0, 0.245, 0, Risk.HIGH),  # → 0.25 in/hr
+        (0, 1.004, 0, Risk.SEVERE),  # → 1.00, and No Travel is strictly > 1.00
+        (0, 0, 2.995, Risk.SEVERE),  # → 3.00, and No Travel is strictly > 3.0
+    ],
+)
+def test_values_are_rounded_to_table_precision_before_classifying(wind, rain, snow, expected):
+    assert assess(wind, rain, snow, 10_000).level == expected
+    assert risk_level(wind, rain, snow, 10_000) == expected
+
+
+def test_reason_shows_the_same_number_that_was_rated():
+    # 36.5 mph: banker's rounding would print "36"; the UI shows 37.
+    a = assess(wind_mph=36.5, rain_in_hr=0, snow_in_hr=0, load_lb=45_000)
+    assert a.reasons == ["Wind 37 mph with 45,000 lb load (> 40,000 lb) → Severe"]
+
+
+def test_round_half_up():
+    from routing.services.risk import round_half_up
+
+    assert round_half_up(2.5) == 3
+    assert round_half_up(0.125, 2) == 0.13
+    assert round_half_up(0.145, 2) == 0.15  # float 0.145 is 0.14499…; still rounds as written

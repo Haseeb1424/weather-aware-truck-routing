@@ -23,7 +23,10 @@ function formatError(body: unknown): string | null {
   const parts: string[] = []
   for (const [field, value] of Object.entries(b)) {
     const msg = Array.isArray(value) ? value.join(' ') : typeof value === 'object' ? formatError(value) : String(value)
-    parts.push(field === 'non_field_errors' ? `${msg}` : `${field.replace(/_/g, ' ')}: ${msg}`)
+    const name = field.replace(/_/g, ' ')
+    // DRF messages often already name the field ("Departure can't be…"); don't repeat it.
+    const named = field === 'non_field_errors' || (msg ?? '').toLowerCase().startsWith(name.toLowerCase())
+    parts.push(named ? `${msg}` : `${name}: ${msg}`)
   }
   return parts.join(' · ') || null
 }
