@@ -3,10 +3,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Map, { AttributionControl, Layer, Marker, NavigationControl, Popup, ScaleControl, Source, type MapRef } from 'react-map-gl/maplibre'
 import { formatTime } from '../lib/format'
 import { boundsOf, heatCellsToGeoJSON, positionAt, riskSegments } from '../lib/geo'
-import { METRICS, RISK_COLORS, riskColor } from '../lib/risk'
+import { METRICS, RISK_COLORS, riskBadgeStyle } from '../lib/risk'
 import type { Checkpoint, Heatmap, Metric, Plan } from '../types'
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+// Dark basemap: risk colours and the heatmap carry the information, the map stays quiet.
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 const HEATMAP_MAX_ZOOM = 10
 
 interface Props {
@@ -45,7 +46,7 @@ function heatColor(metric: Metric): ExpressionSpecification {
     0,
     'rgba(0,0,0,0)',
     mod * 0.5,
-    metric === 'risk' ? rgba(RISK_COLORS[0], 0.2) : 'rgba(56,189,248,0.22)',
+    metric === 'risk' ? rgba(RISK_COLORS[0], 0.1) : 'rgba(56,189,248,0.16)',
     mod,
     rgba(RISK_COLORS[1], 0.5),
     high,
@@ -182,7 +183,7 @@ export function MapView(props: Props) {
           type="line"
           filter={['!=', ['get', 'id'], selectedId ?? '']}
           layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-          paint={{ 'line-color': '#ffffff', 'line-width': 7 }}
+          paint={{ 'line-color': '#08121c', 'line-width': 7 }}
         />
         <Layer
           id="routes-alt"
@@ -190,7 +191,7 @@ export function MapView(props: Props) {
           filter={['!=', ['get', 'id'], selectedId ?? '']}
           layout={{ 'line-cap': 'round', 'line-join': 'round' }}
           paint={{
-            'line-color': ['case', ['==', ['get', 'id'], hoverId ?? ''], '#475569', '#94a3b8'],
+            'line-color': ['case', ['==', ['get', 'id'], hoverId ?? ''], '#cbd5e1', '#64748b'],
             'line-width': 4,
           }}
         />
@@ -203,7 +204,7 @@ export function MapView(props: Props) {
             id="selected-casing"
             type="line"
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            paint={{ 'line-color': '#0f172a', 'line-width': 9, 'line-opacity': 0.85 }}
+            paint={{ 'line-color': '#08121c', 'line-width': 10, 'line-opacity': 0.95 }}
           />
           <Layer
             id="selected-line"
@@ -224,7 +225,7 @@ export function MapView(props: Props) {
           paint={{
             'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 3.5, 9, 7],
             'circle-color': ['match', ['get', 'level'], 0, RISK_COLORS[0], 1, RISK_COLORS[1], 2, RISK_COLORS[2], 3, RISK_COLORS[3], RISK_COLORS[4]],
-            'circle-stroke-color': '#ffffff',
+            'circle-stroke-color': '#08121c',
             'circle-stroke-width': ['case', ['==', ['get', 'index'], focus?.index ?? -1], 3, 1.5],
           }}
         />
@@ -232,12 +233,12 @@ export function MapView(props: Props) {
 
       {origin && (
         <Marker longitude={origin[0]} latitude={origin[1]}>
-          <div className="h-4 w-4 rounded-full border-[3px] border-white bg-teal-700 shadow" title="Origin" />
+          <div className="h-4 w-4 rounded-full border-[3px] border-ink-950 bg-accent shadow-[0_0_0_3px_rgb(64_224_208/0.3)]" title="Origin" />
         </Marker>
       )}
       {destination && (
         <Marker longitude={destination[0]} latitude={destination[1]}>
-          <div className="h-4 w-4 rounded-sm border-[3px] border-white bg-slate-900 shadow" title="Destination" />
+          <div className="h-4 w-4 rounded-[3px] border-[3px] border-ink-950 bg-white shadow-[0_0_0_3px_rgb(255_255_255/0.25)]" title="Destination" />
         </Marker>
       )}
 
@@ -246,8 +247,10 @@ export function MapView(props: Props) {
         return (
           <Marker key={t.id} longitude={t.point[0]} latitude={t.point[1]} style={{ zIndex: isSel ? 3 : 2 }}>
             <div
-              className={`flex items-center justify-center rounded-full border-2 border-white font-bold text-white shadow-md transition-opacity ${
-                isSel ? 'h-7 w-7 bg-teal-700 text-[11px]' : 'h-5 w-5 bg-slate-500 text-[9px] opacity-80'
+              className={`flex items-center justify-center rounded-full border-2 border-ink-950 font-bold shadow-lg ${
+                isSel
+                  ? 'h-7 w-7 bg-accent text-[11px] text-accent-ink shadow-[0_0_0_4px_rgb(64_224_208/0.25)]'
+                  : 'h-5 w-5 bg-slate-400 text-[9px] text-ink-950 opacity-90'
               }`}
               title={`${t.id === recommendedId ? 'Recommended — ' : ''}Route ${t.id} truck${t.arrived ? ' (arrived)' : ''}`}
             >
@@ -276,26 +279,26 @@ export function MapView(props: Props) {
 function CheckpointPopup({ cp }: { cp: Checkpoint }) {
   const w = cp.weather
   return (
-    <div className="text-xs text-slate-700">
-      <div className="mb-1 flex items-center justify-between gap-3">
-        <span className="font-semibold text-slate-900">Mile {Math.round(cp.mile)}</span>
-        <span className="rounded px-1.5 py-px text-[10px] font-semibold text-white" style={{ background: riskColor(cp.risk.level) }}>
+    <div className="text-xs text-slate-300">
+      <div className="mb-1 flex items-center justify-between gap-4 pr-4">
+        <span className="text-sm font-semibold text-white">Mile {Math.round(cp.mile)}</span>
+        <span className="rounded px-1.5 py-px text-[10px] font-semibold" style={riskBadgeStyle(cp.risk.level)}>
           {cp.risk.label}
         </span>
       </div>
-      <div className="mb-1.5 text-slate-500">ETA {formatTime(cp.eta)}</div>
+      <div className="mb-2 text-slate-400">ETA {formatTime(cp.eta)}</div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 tabular-nums">
         <dt className="text-slate-500">Wind</dt>
-        <dd>
-          {Math.round(w.wind_mph)} mph <span className="text-slate-400">(gusts {Math.round(w.gust_mph)})</span>
+        <dd className="text-slate-100">
+          {Math.round(w.wind_mph)} mph <span className="text-slate-500">(gusts {Math.round(w.gust_mph)})</span>
         </dd>
         <dt className="text-slate-500">Rain</dt>
-        <dd>{w.rain_in_hr.toFixed(2)} in/hr</dd>
+        <dd className="text-slate-100">{w.rain_in_hr.toFixed(2)} in/hr</dd>
         <dt className="text-slate-500">Snow</dt>
-        <dd>{w.snow_in_hr.toFixed(2)} in/hr</dd>
+        <dd className="text-slate-100">{w.snow_in_hr.toFixed(2)} in/hr</dd>
       </dl>
       {cp.risk.reasons.length > 0 && (
-        <ul className="mt-1.5 list-disc space-y-0.5 border-t border-slate-100 pt-1.5 pl-4">
+        <ul className="mt-2 list-disc space-y-0.5 border-t border-line pt-2 pl-4 text-slate-200">
           {cp.risk.reasons.map((r) => (
             <li key={r}>{r}</li>
           ))}

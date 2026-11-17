@@ -4,7 +4,18 @@ export const RISK_LABELS = ['Low', 'Moderate', 'High', 'Severe', 'No Travel'] as
 export const RISK_COLORS = ['#16a34a', '#eab308', '#f97316', '#dc2626', '#7e22ce'] as const
 export const LEVEL_KEYS: (keyof MilesByLevel)[] = ['low', 'moderate', 'high', 'severe', 'no_travel']
 
-export const riskColor = (level: RiskLevel | number) => RISK_COLORS[Math.max(0, Math.min(4, level))]
+/** Lighter tints of the same hues, for risk text on dark surfaces (readable contrast). */
+export const RISK_TEXT = ['#4ade80', '#facc15', '#fb923c', '#f87171', '#c084fc'] as const
+
+const clampLevel = (level: number) => Math.max(0, Math.min(4, level))
+export const riskColor = (level: RiskLevel | number) => RISK_COLORS[clampLevel(level)]
+export const riskText = (level: RiskLevel | number) => RISK_TEXT[clampLevel(level)]
+
+/** Badge style: tinted background + readable text, both from the risk hue. */
+export const riskBadgeStyle = (level: RiskLevel | number) => ({
+  background: `${riskColor(level)}2e`,
+  color: riskText(level),
+})
 
 /** How each heatmap metric is normalised to a 0–1 weight. The upper bound is the
  * metric's "No Travel" threshold, so colours line up with the risk table. */

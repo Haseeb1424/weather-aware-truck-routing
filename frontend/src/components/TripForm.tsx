@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { defaultDeparture, localTz, toLocalInput } from '../lib/format'
+import { inputCls, labelCls, segmentCls, segmentedCls } from '../lib/ui'
 import type { Place, PlanRequest } from '../types'
 import { PlaceInput } from './PlaceInput'
 
@@ -46,18 +47,18 @@ export function TripForm({ loading, onSubmit }: Props) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <PlaceInput label="Origin" value={origin} onChange={setOrigin} placeholder="City or address" dotColor="#0f766e" />
+    <form onSubmit={submit} className="space-y-3.5">
+      <PlaceInput label="Origin" value={origin} onChange={setOrigin} placeholder="City or address" marker="origin" />
       <PlaceInput
         label="Destination"
         value={destination}
         onChange={setDestination}
         placeholder="City or address"
-        dotColor="#0f172a"
+        marker="destination"
       />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-[1.35fr_1fr] gap-3">
         <div>
-          <label htmlFor="departure" className="mb-1 block text-xs font-medium text-slate-500">
+          <label htmlFor="departure" className={labelCls}>
             Departure ({localTz})
           </label>
           <input
@@ -65,11 +66,11 @@ export function TripForm({ loading, onSubmit }: Props) {
             type="datetime-local"
             value={departure}
             onChange={(e) => setDeparture(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+            className={`${inputCls} px-2.5 [color-scheme:dark]`}
           />
         </div>
         <div>
-          <label htmlFor="load" className="mb-1 block text-xs font-medium text-slate-500">
+          <label htmlFor="load" className={labelCls}>
             Load weight (lb)
           </label>
           <input
@@ -81,33 +82,27 @@ export function TripForm({ loading, onSubmit }: Props) {
             step={500}
             value={load}
             onChange={(e) => setLoad(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+            className={`${inputCls} tabular-nums`}
           />
         </div>
       </div>
       <fieldset>
-        <legend className="mb-1 block text-xs font-medium text-slate-500">Weather checkpoint every</legend>
-        <div className="grid grid-cols-3 rounded-lg border border-slate-300 bg-white p-0.5">
+        <legend className={labelCls}>Weather checkpoint every</legend>
+        <div className={`${segmentedCls} grid-cols-3`}>
           {([10, 25, 50] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              aria-pressed={interval === v}
-              onClick={() => setInterval(v)}
-              className={`rounded-md py-1.5 text-sm transition ${interval === v ? 'bg-teal-700 font-medium text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-            >
+            <button key={v} type="button" aria-pressed={interval === v} onClick={() => setInterval(v)} className={segmentCls(interval === v)}>
               {v} mi
             </button>
           ))}
         </div>
       </fieldset>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
       <button
         type="submit"
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-wait disabled:opacity-70"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-accent to-accent-strong py-2.5 text-sm font-semibold text-accent-ink shadow-lg shadow-accent/15 transition hover:brightness-110 disabled:cursor-wait disabled:opacity-70"
       >
-        {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+        {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-ink/30 border-t-accent-ink" />}
         {loading ? 'Planning routes…' : 'Find safest route'}
       </button>
       <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
@@ -116,7 +111,7 @@ export function TripForm({ loading, onSubmit }: Props) {
           <button
             key={ex.name}
             type="button"
-            className="rounded-full border border-slate-200 bg-white px-2 py-0.5 hover:border-teal-600 hover:text-teal-700"
+            className="rounded-full border border-line-strong px-2.5 py-0.5 text-slate-300 transition hover:border-accent hover:text-accent"
             onClick={() => {
               setOrigin(ex.origin)
               setDestination(ex.destination)

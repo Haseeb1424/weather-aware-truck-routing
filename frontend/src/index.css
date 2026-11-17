@@ -1,9 +1,62 @@
 @import "tailwindcss";
 @import "maplibre-gl/dist/maplibre-gl.css";
 
+/* Dispatch-console theme: deep navy surfaces, turquoise accent.
+   Risk colours (green → purple) are semantic and stay separate from the brand. */
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-ink-950: #08121c;
+  --color-ink-900: #0d1e2d;
+  --color-ink-850: #112538;
+  --color-ink-800: #172c41;
+  --color-ink-700: #22394f;
+  --color-line: rgb(148 163 184 / 0.16);
+  --color-line-strong: rgb(148 163 184 / 0.28);
+
+  --color-accent: #40e0d0;
+  --color-accent-strong: #2cc8b8;
+  --color-accent-soft: rgb(64 224 208 / 0.12);
+  --color-accent-ink: #062a2a;
+}
+
 html, body, #root { height: 100%; }
-body { margin: 0; background: #f8fafc; color: #0f172a; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+body {
+  margin: 0;
+  background: var(--color-ink-950);
+  color: #e2e8f0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
 
-.maplibregl-popup-content { border-radius: 10px; padding: 10px 12px; box-shadow: 0 8px 24px rgb(15 23 42 / 0.18); }
+/* Thin, dark scrollbars for the side panel */
+.scroll-thin { scrollbar-width: thin; scrollbar-color: var(--color-ink-700) transparent; }
 
-input[type="range"].slider { accent-color: #0f766e; }
+/* Native date picker icon on dark inputs */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
+
+input[type="range"].slider { accent-color: var(--color-accent); }
+
+/* MapLibre controls and popups, themed */
+.maplibregl-popup-content {
+  background: var(--color-ink-850);
+  color: #e2e8f0;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+}
+.maplibregl-popup-close-button { color: #94a3b8; font-size: 16px; padding: 2px 8px; }
+.maplibregl-popup-close-button:hover { background: transparent; color: #fff; }
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--color-ink-850); }
+.maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: var(--color-ink-850); }
+.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--color-ink-850); }
+.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--color-ink-850); }
+.maplibregl-ctrl-group { background: var(--color-ink-850) !important; border: 1px solid var(--color-line-strong); box-shadow: none !important; }
+.maplibregl-ctrl-group button + button { border-top-color: var(--color-line) !important; }
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1) brightness(0.85); }
+.maplibregl-ctrl-attrib { background: rgb(8 18 28 / 0.7) !important; color: #94a3b8; }
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-attrib-inner { color: #94a3b8 !important; }
+.maplibregl-ctrl-attrib a { color: #94a3b8 !important; }
+.maplibregl-ctrl-attrib-button { filter: invert(1); }
+.maplibregl-ctrl-scale { background: rgb(8 18 28 / 0.7); color: #cbd5e1; border-color: #64748b; }

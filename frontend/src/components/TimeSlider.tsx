@@ -49,9 +49,10 @@ export function TimeSlider(props: Props) {
 
   const at = new Date(new Date(departure).getTime() + hour * 3600_000)
   const m = METRICS[metric]
+  const pct = (hour / MAX_HOURS) * 100
 
   return (
-    <div className="pointer-events-auto rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur sm:p-3">
+    <div className="pointer-events-auto rounded-2xl border border-line-strong bg-ink-900/90 p-2.5 text-slate-200 shadow-2xl shadow-black/50 backdrop-blur-md sm:p-3.5">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <button
           type="button"
@@ -59,7 +60,7 @@ export function TimeSlider(props: Props) {
             if (!playing && hour >= MAX_HOURS) onHour(0)
             onPlaying(!playing)
           }}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-700 text-white hover:bg-teal-800"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink shadow-lg shadow-accent/20 transition hover:brightness-110"
           aria-label={playing ? 'Pause forecast' : 'Play forecast'}
         >
           {playing ? (
@@ -74,11 +75,14 @@ export function TimeSlider(props: Props) {
           )}
         </button>
         <div className="min-w-[150px]">
-          <div className="text-sm font-semibold tabular-nums">{formatTime(at)}</div>
-          <div className="text-xs text-slate-500 tabular-nums">Departure + {hour.toFixed(hour % 1 ? 1 : 0)} h</div>
+          <div className="text-[10px] font-semibold tracking-[0.14em] text-slate-500 uppercase">Forecast time</div>
+          <div className="text-sm font-semibold text-white tabular-nums">
+            {formatTime(at)}{' '}
+            <span className="font-normal text-slate-400">· +{hour.toFixed(hour % 1 ? 1 : 0)} h</span>
+          </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <div className="flex rounded-lg border border-slate-200 p-0.5 text-xs" role="group" aria-label="Heatmap metric">
+          <div className="flex rounded-lg border border-line-strong bg-ink-850 p-0.5 text-xs" role="group" aria-label="Heatmap metric">
             {(Object.keys(METRICS) as Metric[]).map((k) => (
               <button
                 key={k}
@@ -88,23 +92,28 @@ export function TimeSlider(props: Props) {
                   onMetric(k)
                   onShowHeatmap(true)
                 }}
-                className={`rounded-md px-2 py-1 ${metric === k && showHeatmap ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                className={`rounded-md px-2.5 py-1 transition ${
+                  metric === k && showHeatmap ? 'bg-accent font-semibold text-accent-ink' : 'text-slate-300 hover:bg-ink-700 hover:text-white'
+                }`}
               >
                 {METRICS[k].label}
               </button>
             ))}
           </div>
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-600">
-            <input type="checkbox" checked={showHeatmap} onChange={(e) => onShowHeatmap(e.target.checked)} className="accent-teal-700" />
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-300">
+            <input type="checkbox" checked={showHeatmap} onChange={(e) => onShowHeatmap(e.target.checked)} className="accent-[#40e0d0]" />
             Heatmap
           </label>
         </div>
       </div>
 
-      <div className="relative mt-2">
+      <div className="relative mt-3">
+        {/* Filled track: departure → current hour */}
+        <div className="pointer-events-none absolute top-[9px] left-0 h-1 w-full rounded-full bg-ink-700" />
+        <div className="pointer-events-none absolute top-[9px] left-0 h-1 rounded-full bg-accent/70" style={{ width: `${pct}%` }} />
         <input
           type="range"
-          className="slider w-full"
+          className="slider relative w-full appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-[22px] [&::-webkit-slider-thumb]:mt-[3px] [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-ink-900 [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgb(64_224_208/0.2)]"
           min={0}
           max={MAX_HOURS}
           step={0.25}
@@ -117,27 +126,33 @@ export function TimeSlider(props: Props) {
         />
         {arrivalHour !== null && arrivalHour <= MAX_HOURS && (
           <div
-            className="pointer-events-none absolute -top-1 h-2 w-0.5 -translate-x-1/2 bg-slate-900"
+            className="pointer-events-none absolute -top-3 -translate-x-1/2 text-[9px] font-semibold tracking-wider text-slate-400 uppercase"
             style={{ left: `${(arrivalHour / MAX_HOURS) * 100}%` }}
             title="Selected route arrives"
-          />
+          >
+            <span className="block">Arrive</span>
+            <span className="mx-auto mt-0.5 block h-2 w-px bg-slate-400" />
+          </div>
         )}
-        <div className="flex justify-between text-[10px] text-slate-400 tabular-nums">
+        <div className="mt-0.5 flex justify-between text-[10px] text-slate-500 tabular-nums">
           {[0, 12, 24, 36, 48].map((h) => (
             <span key={h}>{h}h</span>
           ))}
         </div>
       </div>
 
-      <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-        <div className="flex items-center gap-1">
-          <span>{m.label}{m.unit && ` (${m.unit})`}</span>
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+        <div className="flex items-center gap-2">
+          <span>
+            {m.label}
+            {m.unit && ` (${m.unit})`}
+          </span>
           <div className="flex overflow-hidden rounded">
             {m.legend.map((label, i) => (
               <span
                 key={label}
-                className="px-1.5 py-px text-[10px] font-medium"
-                style={{ background: i === 0 ? '#e2e8f0' : RISK_COLORS[i], color: i === 0 ? '#475569' : '#fff' }}
+                className="px-1.5 py-px text-[10px] font-semibold"
+                style={{ background: i === 0 ? '#22394f' : RISK_COLORS[i], color: i === 0 ? '#cbd5e1' : '#fff' }}
               >
                 {label}
               </span>
@@ -145,9 +160,14 @@ export function TimeSlider(props: Props) {
           </div>
         </div>
         <span>
-          {heatmapState === 'loading' && 'Loading corridor forecast…'}
-          {heatmapState === 'error' && <span className="text-red-600">Heatmap unavailable</span>}
-          {heatmapState === 'ready' && <span className="hidden sm:inline">Trucks show each route’s position at this time</span>}
+          {heatmapState === 'loading' && (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-600 border-t-accent" />
+              Loading corridor forecast…
+            </span>
+          )}
+          {heatmapState === 'error' && <span className="text-red-400">Heatmap unavailable — weather service busy</span>}
+          {heatmapState === 'ready' && <span className="hidden sm:inline">Markers show each truck’s position at this time</span>}
         </span>
       </div>
     </div>
