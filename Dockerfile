@@ -11,7 +11,7 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     FRONTEND_DIST=/app/frontend/dist PORT=8000
 WORKDIR /app/backend
-COPY backend/requirements.txt ./
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
 COPY --from=web /web/dist /app/frontend/dist
@@ -20,4 +20,4 @@ USER app
 EXPOSE 8000
 # One process with threads: the in-memory forecast/route cache is shared by
 # every request, and the work is I/O-bound (waiting on OSRM/Open-Meteo).
-CMD gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --worker-class gthread --workers 1 --threads 16 --timeout 90
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --worker-class gthread --workers 1 --threads 16 --timeout 90"]

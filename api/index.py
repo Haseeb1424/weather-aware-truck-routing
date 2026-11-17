@@ -1,0 +1,18 @@
+"""Vercel entry point: exposes the Django API as a Python serverless function.
+
+vercel.json rewrites every /api/* request here; Django still sees the original
+path (/api/plan, /api/heatmap, ...) and routes it as usual. The React build is
+served by Vercel's CDN, not by this function.
+"""
+
+import os
+import sys
+from pathlib import Path
+
+BACKEND = Path(__file__).resolve().parent.parent / "backend"
+sys.path.insert(0, str(BACKEND))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
+from django.core.wsgi import get_wsgi_application  # noqa: E402
+
+app = get_wsgi_application()

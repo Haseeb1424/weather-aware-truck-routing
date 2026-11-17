@@ -1,6 +1,7 @@
 """Django settings. Everything deploy-specific comes from environment variables."""
 
 import os
+import secrets
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -18,14 +19,22 @@ def env_list(name: str, default: str = "") -> list[str]:
 
 
 DEBUG = env_bool("DJANGO_DEBUG", False)
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or ("dev-only-insecure-key" if DEBUG else None)
-if not SECRET_KEY:
-    raise RuntimeError("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is off")
+# The app signs nothing (no sessions, logins or cookies), so a per-process random
+# key is safe when none is configured — deploys work with zero setup.
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or secrets.token_urlsafe(50)
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 if render_host := os.getenv("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(render_host)
-CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if h not in ("localhost", "127.0.0.1")]
+if os.getenv("VERCEL"):
+    # Production, preview and branch URLs are all *.vercel.app; a custom domain
+    # can be added through DJANGO_ALLOWED_HOSTS.
+    ALLOWED_HOSTS.append(".vercel.app")
+CSRF_TRUSTED_ORIGINS = [
+    f"https://*{h}" if h.startswith(".") else f"https://{h}"
+    for h in ALLOWED_HOSTS
+    if h not in ("localhost", "127.0.0.1")
+]
 
 # The app is stateless: no models, no auth, no sessions — so no database.
 INSTALLED_APPS = [

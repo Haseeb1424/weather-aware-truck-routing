@@ -123,6 +123,8 @@ no route is safe at that departure time.
 ## Project layout
 
 ```
+api/index.py                 Vercel entry point (wraps the Django app)
+vercel.json                  Vercel build, function and rewrite config
 backend/
   config/                    settings (env-driven), URLs, serves the built SPA
   routing/
@@ -176,17 +178,36 @@ cd frontend && npm run lint && npm run build
 
 ## Deploy
 
-The Docker image builds the React app and serves it from Django, so there's one
-service and one URL, with no CORS setup.
+No environment variables are required on any host: every external service is
+keyless, and the app signs nothing (no sessions, logins or cookies), so Django's
+secret key is generated per process when none is set.
+
+### Vercel (the hosted demo)
+
+Import the repository at vercel.com → **Add New → Project**, keep the defaults,
+and deploy. `vercel.json` does the rest:
+
+- builds `frontend/` and serves it from Vercel's CDN;
+- runs the Django API as one Python function, `api/index.py`, with `/api/*`
+  rewritten to it (Django still sees the original path);
+- allows the function up to 60 s (cross-country plans take ~12 s on a cold cache).
+
+Note: serverless instances don't share memory, so the in-process route and
+forecast cache only helps while an instance stays warm. Planning a trip takes
+~4–7 s either way; the map, heatmap and slider run entirely in the browser.
+
+### Docker (Render, Fly.io, Railway, a VM)
+
+The image builds the React app and serves it from Django: one service, one URL,
+no CORS.
 
 ```bash
 docker build -t weather-truck-routing .
-docker run -p 8000:8000 -e DJANGO_SECRET_KEY=change-me -e DJANGO_ALLOWED_HOSTS=localhost weather-truck-routing
+docker run -p 8000:8000 -e DJANGO_ALLOWED_HOSTS=localhost weather-truck-routing
 ```
 
-**Render:** `render.yaml` is a ready-made blueprint. Connect the repo
-(New → Blueprint); it generates the secret key and sets `RENDER_EXTERNAL_HOSTNAME`
-automatically. Any Docker host (Fly.io, Railway, a VM) works the same way.
+On Render, `render.yaml` is a ready-made blueprint (New → Blueprint); Render's
+hostname is picked up automatically.
 
 ## API
 
