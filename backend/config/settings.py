@@ -99,6 +99,8 @@ OPEN_METEO_URL = os.getenv("OPEN_METEO_URL", "https://api.open-meteo.com/v1/fore
 OPEN_METEO_API_KEY = os.getenv("OPEN_METEO_API_KEY", "")
 PHOTON_URL = os.getenv("PHOTON_URL", "https://photon.komoot.io/api/")
 HTTP_TIMEOUT_S = float(os.getenv("HTTP_TIMEOUT_S", "20"))
+# Waits (seconds) before retrying Open-Meteo after a per-minute rate limit.
+WEATHER_RETRY_DELAYS_S = (5, 12)
 HTTP_USER_AGENT = os.getenv("HTTP_USER_AGENT", "weather-aware-truck-routing/1.0")
 
 LOGGING = {

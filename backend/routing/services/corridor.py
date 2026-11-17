@@ -10,7 +10,7 @@ from . import weather
 from .geometry import LonLat
 from .risk import risk_level
 
-MAX_CELLS = 250
+MAX_CELLS = 160  # ~1 lookup per cell; keeps a trip well under the free per-minute limit
 HOURS = 48
 ROUTE_SAMPLE_M = 10_000
 MIN_SPACING_DEG = 0.1

@@ -183,7 +183,7 @@ def test_heatmap_returns_49_hours_per_cell():
     r = APIClient().post("/api/heatmap", body, format="json")
     assert r.status_code == 200, r.content
     data = r.json()
-    assert data["cells"] and len(data["cells"]) <= 250
+    assert data["cells"] and len(data["cells"]) <= 160
     cell = data["cells"][0]
     assert len(cell["risk"]) == 49
     assert set(cell["risk"]) == {4}  # 50 mph + 35,000 lb → No Travel

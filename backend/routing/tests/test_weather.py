@@ -81,3 +81,28 @@ def test_fetch_surfaces_api_errors(settings):
     responses.add(responses.GET, settings.OPEN_METEO_URL, status=429, json={"reason": "Daily limit exceeded"})
     with pytest.raises(weather.WeatherError, match="Daily limit"):
         weather.fetch([(35.0, -97.0)], T0, T0 + HOUR)
+
+
+@responses.activate
+def test_fetch_retries_after_per_minute_limit(settings):
+    cache.clear()
+    settings.OPEN_METEO_URL = "https://weather.test/v1/forecast"
+    settings.WEATHER_RETRY_DELAYS_S = (0, 0)
+    limited = {"error": True, "reason": "Minutely API request limit exceeded. Please try again in one minute."}
+    responses.add(responses.GET, settings.OPEN_METEO_URL, status=429, json=limited)
+    responses.add(responses.GET, settings.OPEN_METEO_URL, json=_om_item())
+
+    out = weather.fetch([(35.0, -97.0)], T0, T0 + HOUR)
+    assert len(out) == 1
+    assert len(responses.calls) == 2
+
+
+@responses.activate
+def test_fetch_does_not_wait_out_daily_limit(settings):
+    cache.clear()
+    settings.OPEN_METEO_URL = "https://weather.test/v1/forecast"
+    settings.WEATHER_RETRY_DELAYS_S = (0, 0)
+    responses.add(responses.GET, settings.OPEN_METEO_URL, status=429, json={"reason": "Daily API request limit exceeded."})
+    with pytest.raises(weather.WeatherError, match="retry shortly"):
+        weather.fetch([(35.0, -97.0)], T0, T0 + HOUR)
+    assert len(responses.calls) == 1

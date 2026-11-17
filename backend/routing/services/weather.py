@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -114,15 +115,29 @@ def _fetch_batch(keys: list[tuple[float, float]], start: int, end: int) -> dict:
     }
     if settings.OPEN_METEO_API_KEY:
         params["apikey"] = settings.OPEN_METEO_API_KEY
-    try:
-        resp = requests.get(settings.OPEN_METEO_URL, params=params, timeout=settings.HTTP_TIMEOUT_S)
-    except requests.RequestException as exc:
-        raise WeatherError(f"Weather service unreachable: {exc}") from exc
-    if resp.status_code != 200:
+
+    # The free tier allows ~600 location-lookups per minute. Hitting that is
+    # temporary, so wait and retry a couple of times; hourly/daily limits are not
+    # worth waiting for and fail straight away.
+    delays = list(settings.WEATHER_RETRY_DELAYS_S)
+    while True:
+        try:
+            resp = requests.get(settings.OPEN_METEO_URL, params=params, timeout=settings.HTTP_TIMEOUT_S)
+        except requests.RequestException as exc:
+            raise WeatherError(f"Weather service unreachable: {exc}") from exc
+        if resp.status_code == 200:
+            break
         try:
             msg = resp.json().get("reason")
         except ValueError:
             msg = None
+        if resp.status_code == 429 and "minut" in (msg or "").lower() and delays:
+            delay = delays.pop(0)
+            log.info("Open-Meteo per-minute limit hit; retrying in %ss", delay)
+            time.sleep(delay)
+            continue
+        if resp.status_code == 429:
+            msg = (msg or "Weather service rate limit reached") + " (free forecast service is busy — please retry shortly)"
         raise WeatherError(msg or f"Weather service error ({resp.status_code})")
     data = resp.json()
     items = data if isinstance(data, list) else [data]

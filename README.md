@@ -7,7 +7,7 @@ get there**, rates each checkpoint with the given risk and load rules, and
 recommends a route. Routes, checkpoints and a weather heatmap along the trip
 (0–48 h, with a time slider) are shown on one map.
 
-- **Live app:** _add the hosted URL here_
+- **Live app:** https://weather-aware-truck-routing-alpha-nine.vercel.app
 - **Walkthrough:** _add the Loom link here_
 
 ## How it works
@@ -93,7 +93,7 @@ no route is safe at that departure time.
 
 ### 6. Heatmap and slider (built for smoothness)
 - The backend picks grid points around all the routes. The grid is finer for
-  short trips and coarser cross-country, capped at 250 points. Each point gets
+  short trips and coarser cross-country, capped at 160 points (about one forecast lookup each). Each point gets
   49 hourly values for risk (with the load rules applied), wind, rain and snow.
 - It is fetched **once**, after the routes are already on screen.
 - Each hour is stored as a separate property on each point (`risk0…risk48`). The
@@ -139,7 +139,7 @@ backend/
       geocoding.py           Photon place search
     serializers.py           request validation
     views.py, urls.py        /api/plan, /api/heatmap, /api/geocode, /api/health
-    tests/                   73 tests: rules, ranking, geometry, weather, routing, API (HTTP mocked)
+    tests/                   75 tests: rules, ranking, geometry, weather, routing, API (HTTP mocked)
 frontend/src/
   App.tsx                    state + layout
   components/MapView.tsx     MapLibre map: risk-coloured route, checkpoints, heatmap, trucks
