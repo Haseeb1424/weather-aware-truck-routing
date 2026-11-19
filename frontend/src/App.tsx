@@ -192,6 +192,7 @@ export default function App() {
                 onShowHeatmap={setShowHeatmap}
                 heatmapState={heatState}
                 arrivalHour={selected ? selected.duration_s / 3600 : null}
+              arrivalLabel={selected?.name ?? null}
               />
             </div>
           )}

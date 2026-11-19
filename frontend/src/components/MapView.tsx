@@ -248,14 +248,19 @@ export function MapView(props: Props) {
         return (
           <Marker key={t.id} longitude={t.point[0]} latitude={t.point[1]} style={{ zIndex: isSel ? 3 : 2 }}>
             <div
-              className={`flex items-center justify-center rounded-full border-2 border-ink-950 font-bold shadow-lg ${
+              className={`relative flex items-center justify-center rounded-full border-2 border-ink-950 font-bold shadow-lg ${
                 isSel
                   ? 'h-7 w-7 bg-accent text-[11px] text-accent-ink shadow-[0_0_0_4px_rgb(64_224_208/0.25)]'
-                  : 'h-5 w-5 bg-slate-400 text-[9px] text-ink-950 opacity-90'
-              }`}
+                  : 'h-5 w-5 bg-slate-400 text-[9px] text-ink-950'
+              } ${t.arrived ? 'opacity-60' : isSel ? '' : 'opacity-90'}`}
               title={`${t.id === recommendedId ? 'Recommended — ' : ''}Route ${t.id} truck${t.arrived ? ' (arrived)' : ''}`}
             >
               {t.id}
+              {t.arrived && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-white text-[8px] leading-none text-ink-950">
+                  ✓
+                </span>
+              )}
             </div>
           </Marker>
         )

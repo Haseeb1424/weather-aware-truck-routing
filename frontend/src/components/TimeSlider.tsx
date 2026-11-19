@@ -18,25 +18,46 @@ interface Props {
   onShowHeatmap: (v: boolean) => void
   heatmapState: 'idle' | 'loading' | 'ready' | 'error'
   arrivalHour: number | null
+  /** Name of the route whose arrival is marked, e.g. "Route B". */
+  arrivalLabel: string | null
 }
 
 export function TimeSlider(props: Props) {
-  const { departure, hour, onHour, playing, onPlaying, metric, onMetric, showHeatmap, onShowHeatmap, heatmapState, arrivalHour } =
-    props
+  const {
+    departure,
+    hour,
+    onHour,
+    playing,
+    onPlaying,
+    metric,
+    onMetric,
+    showHeatmap,
+    onShowHeatmap,
+    heatmapState,
+    arrivalHour,
+    arrivalLabel,
+  } = props
   const hourRef = useRef(hour)
   hourRef.current = hour
+  const arrivalRef = useRef(arrivalHour)
+  arrivalRef.current = arrivalHour
 
   // requestAnimationFrame playback: advances continuously (fractional hours),
   // the map blends neighbouring hours, so the animation is smooth.
+  // The slider is the 0–48 h forecast clock, so playback can run past the trip.
+  // A play started before the selected truck arrives stops at its arrival;
+  // pressing Play again continues the forecast to 48 h.
   useEffect(() => {
     if (!playing) return
+    const arrival = arrivalRef.current
+    const stopAt = arrival !== null && hourRef.current < arrival - 0.01 ? Math.min(arrival, MAX_HOURS) : MAX_HOURS
     let raf = 0
     let last = performance.now()
     const tick = (now: number) => {
       const next = hourRef.current + ((now - last) / 1000) * PLAY_HOURS_PER_SECOND
       last = now
-      if (next >= MAX_HOURS) {
-        onHour(MAX_HOURS)
+      if (next >= stopAt) {
+        onHour(stopAt)
         onPlaying(false)
         return
       }
@@ -48,6 +69,7 @@ export function TimeSlider(props: Props) {
   }, [playing, onHour, onPlaying])
 
   const at = new Date(new Date(departure).getTime() + hour * 3600_000)
+  const arrived = arrivalHour !== null && hour >= arrivalHour - 0.01
   const m = METRICS[metric]
   const pct = (hour / MAX_HOURS) * 100
 
@@ -80,6 +102,11 @@ export function TimeSlider(props: Props) {
             {formatTime(at)}{' '}
             <span className="font-normal text-slate-400">· +{hour.toFixed(hour % 1 ? 1 : 0)} h</span>
           </div>
+          {arrived && arrivalLabel && (
+            <div className="text-[11px] font-medium text-accent">
+              {arrivalLabel} arrived{hour < MAX_HOURS && !playing ? ' · Play continues the forecast' : ''}
+            </div>
+          )}
         </div>
         <div className="ml-auto flex items-center gap-2">
           <div className="flex rounded-lg border border-line-strong bg-ink-850 p-0.5 text-xs" role="group" aria-label="Heatmap metric">
